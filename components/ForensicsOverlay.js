@@ -14,9 +14,8 @@ export default function ForensicsOverlay({ src, blockSize = 32, thresholdPercent
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    const cv = window.cv;
-    if (!cv) return;
     const run = () => {
+      const cv = window.cv;
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       const img = new Image();
@@ -157,8 +156,20 @@ export default function ForensicsOverlay({ src, blockSize = 32, thresholdPercent
         }, 'image/jpeg', 0.9);
       };
     };
-    if (cv.Mat) run();
-    else cv['onRuntimeInitialized'] = run;
+    const init = () => {
+      const cv = window.cv;
+      if (!cv) return false;
+      if (cv.Mat) run();
+      else cv['onRuntimeInitialized'] = run;
+      return true;
+    };
+
+    if (!init()) {
+      const id = setInterval(() => {
+        if (init()) clearInterval(id);
+      }, 100);
+      return () => clearInterval(id);
+    }
   }, [src, blockSize, thresholdPercent]);
 
   return <canvas ref={canvasRef} style={{ width: '100%', height: 'auto' }} />;
