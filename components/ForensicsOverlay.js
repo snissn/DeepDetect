@@ -71,13 +71,19 @@ export default function ForensicsOverlay({ src, blockSize = 32, thresholdPercent
                 if (x0 + gridSize < w) {
                   const col1 = block.col(gridSize-1);
                   const col2 = gray.roi(new cv.Rect(x0+gridSize, y0, 1, gridSize));
-                  diffs.push(cv.mean(cv.absdiff(col1, col2))[0]);
+                  const diff = new cv.Mat();
+                  cv.absdiff(col1, col2, diff);
+                  diffs.push(cv.mean(diff)[0]);
+                  diff.delete();
                   col1.delete(); col2.delete();
                 }
                 if (y0 + gridSize < h) {
                   const row1 = block.row(gridSize-1);
                   const row2 = gray.roi(new cv.Rect(x0, y0+gridSize, gridSize, 1));
-                  diffs.push(cv.mean(cv.absdiff(row1, row2))[0]);
+                  const diff = new cv.Mat();
+                  cv.absdiff(row1, row2, diff);
+                  diffs.push(cv.mean(diff)[0]);
+                  diff.delete();
                   row1.delete(); row2.delete();
                 }
                 block.delete();
