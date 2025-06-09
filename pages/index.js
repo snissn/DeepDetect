@@ -7,8 +7,12 @@ export default function Home() {
   const handleFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    console.log('[Home] Selected file', file.name);
     const reader = new FileReader();
-    reader.onload = (ev) => setSrc(ev.target.result);
+    reader.onload = (ev) => {
+      console.log('[Home] File loaded');
+      setSrc(ev.target.result);
+    };
     reader.readAsDataURL(file);
   };
 
