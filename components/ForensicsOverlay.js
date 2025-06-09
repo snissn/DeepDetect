@@ -14,20 +14,29 @@ export default function ForensicsOverlay({ src, blockSize = 32, thresholdPercent
   const canvasRef = useRef(null);
 
   useEffect(() => {
+    console.log('[ForensicsOverlay] effect triggered', { src, blockSize, thresholdPercent });
     const run = () => {
-      const cv = window.cv;
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = src;
+      console.log('[ForensicsOverlay] Starting analysis');
+      try {
+        const cv = window.cv;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = src;
+
+        img.onerror = (e) => {
+          console.error('[ForensicsOverlay] Image failed to load', e);
+        };
 
       img.onload = () => {
-        const w = img.width;
-        const h = img.height;
-        canvas.width = w;
-        canvas.height = h;
-        ctx.drawImage(img, 0, 0);
+        try {
+          console.log('[ForensicsOverlay] Image loaded, running detectors');
+          const w = img.width;
+          const h = img.height;
+          canvas.width = w;
+          canvas.height = h;
+          ctx.drawImage(img, 0, 0);
 
         let srcMat = cv.imread(canvas);
         let gray = new cv.Mat();
@@ -154,17 +163,32 @@ export default function ForensicsOverlay({ src, blockSize = 32, thresholdPercent
           };
           img2.src = url;
         }, 'image/jpeg', 0.9);
+        } catch (e) {
+          console.error('[ForensicsOverlay] Error during analysis', e);
+        }
       };
+      } catch (e) {
+        console.error('[ForensicsOverlay] Error initializing analysis', e);
+      }
     };
     const init = () => {
       const cv = window.cv;
-      if (!cv) return false;
-      if (cv.Mat) run();
-      else cv['onRuntimeInitialized'] = run;
+      if (!cv) {
+        console.warn('[ForensicsOverlay] OpenCV not loaded yet');
+        return false;
+      }
+      if (cv.Mat) {
+        console.log('[ForensicsOverlay] OpenCV ready');
+        run();
+      } else {
+        console.log('[ForensicsOverlay] Waiting for OpenCV runtime');
+        cv['onRuntimeInitialized'] = run;
+      }
       return true;
     };
 
     if (!init()) {
+      console.log('[ForensicsOverlay] OpenCV not ready, retrying...');
       const id = setInterval(() => {
         if (init()) clearInterval(id);
       }, 100);
