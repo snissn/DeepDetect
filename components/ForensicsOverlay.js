@@ -1,5 +1,17 @@
 import React, { useRef, useEffect } from 'react';
 
+export function denoise(cv, gray) {
+  const denoised = new cv.Mat();
+  if (typeof cv.fastNlMeansDenoising === 'function') {
+    cv.fastNlMeansDenoising(gray, denoised, 10, 7, 21);
+  } else {
+    console.warn('[ForensicsOverlay] fastNlMeansDenoising unavailable, using GaussianBlur');
+    const ksize = new cv.Size(3, 3);
+    cv.GaussianBlur(gray, denoised, ksize, 0, 0, cv.BORDER_DEFAULT);
+  }
+  return denoised;
+}
+
 /**
  * ForensicsOverlay
  * Highlights suspicious editing artifacts in an image using local variance,
@@ -87,8 +99,7 @@ export default function ForensicsOverlay({ src, blockSize = 32, thresholdPercent
           }
         }
 
-        let denoised = new cv.Mat();
-        cv.fastNlMeansDenoising(gray, denoised, 10, 7, 21);
+        const denoised = denoise(cv, gray);
         const residual = new cv.Mat();
         cv.subtract(gray, denoised, residual);
         let prnuMap = Array.from({ length: blocksY }, () => new Array(blocksX).fill(0));
